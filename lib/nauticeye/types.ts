@@ -1,0 +1,11 @@
+export type Severity = 'high' | 'medium' | 'low'
+export type Spill = { id: string; name: string; lat: number; lng: number; detectedAt: number; confidence: number; area: number; severity: Severity; status: 'active' | 'review' | 'resolved'; satellite: string; desc: string; resolvedNote?: string }
+export type TrackPoint = { t: number; lat: number; lng: number; course: number; speed: number }
+export type Vessel = { id: string; name: string; mmsi: string; flag: string; type: string; flagged?: boolean; track: TrackPoint[] }
+export type Approach = { distKm: number; t: number; atTime: number; lat: number; lng: number; course: number }
+export type Score = { overall: number; proximity: number; timeScore: number; courseScore: number; distKm: number; timeDiffH: number }
+export type RankedVessel = { vessel: Vessel; score: Score }
+export type Capability = 'full' | 'balanced' | 'lightweight' | 'compatibility'
+export type Layers = { spills: boolean; vessels: boolean; tracks: boolean; satellite: boolean }
+export type MaritimeDataset = { source: 'simulated' | 'historical' | 'live'; referenceTime: number; spills: Spill[]; vessels: Vessel[] }
+export type DataState<T> = { status: 'ready' | 'stale' | 'partial'; data: T; message?: string } | { status: 'loading' | 'empty' | 'error' | 'unavailable'; message: string }
