@@ -1,19 +1,10 @@
 /**
- * use-live-vessels.ts
+ * use-live-vessels.ts  (updated)
  *
- * Fetches real AIS vessels from /api/vessels and merges them with the
- * demo dataset so the app always has something to show even when the
- * network or API key is unavailable.
- *
- * Usage:
- *   const { vessels, status, refresh } = useLiveVessels(spill)
- *
- * Status values:
- *   'idle'     — not started yet
- *   'loading'  — fetch in progress
- *   'live'     — using real AIS data
- *   'demo'     — API failed, using demo vessels as fallback
- *   'error'    — hard failure (shown to user)
+ * Changes from v1:
+ *  - Reads the source field from the API response
+ *  - Shows 'live' only when source === 'live', 'demo' when fallback
+ *  - No longer double-falls-back on the client (API handles it)
  */
 
 'use client'
@@ -35,17 +26,15 @@ interface UseLiveVesselsResult {
 interface APIResponse {
   vessels:     Vessel[]
   vesselCount: number
-  source:      string
+  source:      'live' | 'demo_fallback'
+  reason?:     string
   collectedAt: string
   error?:      string
   help?:       string
 }
 
-// ─── Hook ─────────────────────────────────────────────────────────────────────
-
 export function useLiveVessels(
   spill: Spill | null,
-  /** Set to false to skip live fetch and use demo data (e.g. in story mode). */
   enabled = true,
 ): UseLiveVesselsResult {
   const [vessels,   setVessels]   = useState<Vessel[]>(DEMO_VESSELS)
@@ -62,7 +51,6 @@ export function useLiveVessels(
       return
     }
 
-    // Cancel any in-flight request
     abortRef.current?.abort()
     const controller = new AbortController()
     abortRef.current = controller
@@ -72,54 +60,44 @@ export function useLiveVessels(
 
     const params = new URLSearchParams({
       spill:  spill ? `${spill.lat},${spill.lng}` : '19.52,71.48',
-      radius: '300',
-      secs:   '8',
+      radius: '500',
+      secs:   '15',
     })
 
     try {
-      const res = await fetch(`/api/vessels?${params}`, {
-        signal: controller.signal,
-      })
+      const res = await fetch(`/api/vessels?${params}`, { signal: controller.signal })
 
-      const json: APIResponse = await res.json()
-
-      if (!res.ok || json.error) {
-        throw new Error(json.help ?? json.error ?? `HTTP ${res.status}`)
+      // If the response isn't JSON (e.g. HTML error page), handle gracefully
+      const text = await res.text()
+      let json: APIResponse
+      try {
+        json = JSON.parse(text)
+      } catch {
+        throw new Error(`Server returned non-JSON response (status ${res.status})`)
       }
 
-      if (json.vessels.length === 0) {
-        // No vessels in range right now — fall back to demo but tell the user
-        setVessels(DEMO_VESSELS)
-        setStatus('demo')
-        setMessage(
-          'No AIS traffic observed in this area right now. Showing demonstration vessels.',
-        )
-      } else {
-        setVessels(json.vessels)
-        setStatus('live')
-        setMessage(
-          `${json.vesselCount} live vessel${json.vesselCount === 1 ? '' : 's'} received from AIS network.`,
-        )
-      }
+      if (!res.ok && json.error) throw new Error(json.help ?? json.error)
 
+      setVessels(json.vessels)
       setLastFetch(new Date(json.collectedAt))
+
+      if (json.source === 'live') {
+        setStatus('live')
+        setMessage(`${json.vesselCount} live vessel${json.vesselCount === 1 ? '' : 's'} from AIS network.`)
+      } else {
+        setStatus('demo')
+        setMessage(json.reason ?? 'No live vessels found. Showing demonstration data.')
+      }
 
     } catch (err: unknown) {
       if ((err as Error).name === 'AbortError') return
-
       console.error('[useLiveVessels]', err)
-
-      // Graceful fallback — demo data is always better than nothing
       setVessels(DEMO_VESSELS)
       setStatus('demo')
-      setMessage(
-        `Live AIS unavailable (${(err as Error).message ?? 'network error'}). ` +
-        'Showing demonstration vessels.',
-      )
+      setMessage(`Live AIS unavailable. Showing demonstration vessels.`)
     }
   }, [spill, enabled])
 
-  // Fetch on mount and whenever the selected spill changes
   useEffect(() => {
     fetch_()
     return () => abortRef.current?.abort()

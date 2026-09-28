@@ -73,10 +73,10 @@ function LiveStatusBadge({
     return (
       <span
         style={{
-          position: 'fixed', bottom: 44, right: 14, zIndex: 800,
-          display: 'flex', alignItems: 'center', gap: 6,
+          position: 'fixed', bottom: '44px', right: '14px', zIndex: 800,
+          display: 'flex', alignItems: 'center', gap: '6px',
           background: '#101c20ee', border: '1px solid #263336',
-          padding: '6px 10px', fontSize: 9, fontFamily: 'var(--font-technical)',
+          padding: '6px 10px', fontSize: '9px', fontFamily: 'var(--font-technical)',
           letterSpacing: '0.6px', color: '#8c9c9d',
         }}
         role="status"
@@ -92,10 +92,10 @@ function LiveStatusBadge({
     return (
       <span
         style={{
-          position: 'fixed', bottom: 44, right: 14, zIndex: 800,
-          display: 'flex', alignItems: 'center', gap: 6,
+          position: 'fixed', bottom: '44px', right: '14px', zIndex: 800,
+          display: 'flex', alignItems: 'center', gap: '6px',
           background: '#101c20ee', border: '1px solid #263336',
-          padding: '6px 10px', fontSize: 9, fontFamily: 'var(--font-technical)',
+          padding: '6px 10px', fontSize: '9px', fontFamily: 'var(--font-technical)',
           letterSpacing: '0.6px', color: '#bce1bd',
         }}
         title={message}
@@ -110,10 +110,10 @@ function LiveStatusBadge({
   return (
     <span
       style={{
-        position: 'fixed', bottom: 44, right: 14, zIndex: 800,
-        display: 'flex', alignItems: 'center', gap: 8,
+        position: 'fixed', bottom: '44px', right: '14px', zIndex: 800,
+        display: 'flex', alignItems: 'center', gap: '8px',
         background: '#101c20ee', border: '1px solid #263336',
-        padding: '6px 10px', fontSize: 9, fontFamily: 'var(--font-technical)',
+        padding: '6px 10px', fontSize: '9px', fontFamily: 'var(--font-technical)',
         letterSpacing: '0.6px', color: '#8c9c9d',
       }}
       title={message}
@@ -122,7 +122,7 @@ function LiveStatusBadge({
       DEMO DATA
       <button
         onClick={onRefresh}
-        style={{ color: '#bce1bd', marginLeft: 4, fontSize: 9 }}
+        style={{ color: '#bce1bd', marginLeft: '4px', fontSize: '9px' }}
         aria-label="Retry live AIS fetch"
       >
         RETRY
@@ -444,8 +444,8 @@ export function NauticEyeConsole({ dataset: initialDataset }: { dataset: Maritim
         onVessel={id => { setTime(56); setPlaying(false); onVessel(id); setDialog(null) }}
       />
 
-      {/* Live AIS status badge */}
-      <LiveStatusBadge status={aisStatus} message={aisMessage} onRefresh={refreshAIS} />
+      {/* Live AIS status badge — only renders on client to avoid hydration mismatch */}
+      {ready && <LiveStatusBadge status={aisStatus} message={aisMessage} onRefresh={refreshAIS} />}
 
       <div className="sr-only" role="status" aria-live="polite">
         {mode === 'overview'
